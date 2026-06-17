@@ -32,8 +32,7 @@ st.markdown("""
 st.title("🚚 LogiRoute AI - Delivery Time Predictor")
 st.write("Enter trip details below to forecast delivery latency using the trained Random Forest Model.")
 
-# 2. Artifacts Load Karein (With Fixed Windows Absolute Path)
-# String ke aage 'r' lagane se Windows backslash paths safely handle ho jaate hain
+# 2. Artifacts Load Karein (Relative Path for Cloud & Local Compliance)
 MODEL_PATH = "logiroute_model.pkl"
 
 @st.cache_resource
@@ -63,7 +62,6 @@ with st.form("prediction_form"):
         traffic = st.selectbox("Traffic Level", label_encoders['Traffic_Level'].classes_)
         
     with col2:
-        # Note: Agar aapke pkl me key 'Weather' hai toh dropdown perfectly fetch hoga
         weather = st.selectbox("Weather Condition", label_encoders['Weather'].classes_)
         time_of_day = st.selectbox("Time of Day", label_encoders['Time_of_Day'].classes_)
         order_type = st.selectbox("Order Type", label_encoders['Order_Type'].classes_)
@@ -74,23 +72,13 @@ with st.form("prediction_form"):
 
     submit_btn = st.form_submit_button("Forecast Delivery Time")
 
-# 4. Prediction Logic
-# . . . (Upar ka Form waala code bilkul same rahega) . . .
-
-    metro_zone = st.radio("Is Metro Construction Zone?", ["No (0)", "Yes (1)"], horizontal=True)
-    metro_val = 1 if "Yes" in metro_zone else 0
-
-    submit_btn = st.form_submit_button("Forecast Delivery Time")
-
-
-# 🔍 YAHAN PAR BADALNA HAI: Purane '# 4. Prediction Logic' ko hataiye aur ise paste kijiye
-# 4. Prediction Logic (With Same-Location Validation Fix)
+# 4. Prediction Logic (With Duplicate Fix and Smart Logic Verification)
 if submit_btn:
     if start_loc == end_loc:
-        # Agar start aur end location same hai toh model bypass karo aur warning box dikhao
+        # Agar start aur end location same hai toh model bypass karke alert box dikhao
         st.markdown(f"""
             <div class="result-box" style="border-left: 5px solid #EF4444; background-color: #1E293B;">
-                <h3 style="color: white; margin-bottom: 5px;">⏱️ Predicted Delivery Time</h3>
+                <h3 style="color: white; margin-bottom: 5px;">⏱ nighttime Predicted Delivery Time</h3>
                 <h1 style="color: #EF4444; font-size: 35px; margin: 10px 0;">0.0 Minutes</h1>
                 <p style="color: #94A3B8; font-size: 13px;">⚠️ Source and Destination are the same location.</p>
             </div>
@@ -113,7 +101,7 @@ if submit_btn:
             # Model se prediction nikalna
             predicted_time = model.predict(input_data)[0]
             
-            # Result Display (Normal Green Box)
+            # Normal Success Display (Green Box)
             st.markdown(f"""
                 <div class="result-box">
                     <h3 style="color: white; margin-bottom: 5px;">⏱️ Predicted Delivery Time</h3>
