@@ -75,34 +75,52 @@ with st.form("prediction_form"):
     submit_btn = st.form_submit_button("Forecast Delivery Time")
 
 # 4. Prediction Logic
+# . . . (Upar ka Form waala code bilkul same rahega) . . .
+
+    metro_zone = st.radio("Is Metro Construction Zone?", ["No (0)", "Yes (1)"], horizontal=True)
+    metro_val = 1 if "Yes" in metro_zone else 0
+
+    submit_btn = st.form_submit_button("Forecast Delivery Time")
+
+
+# 🔍 YAHAN PAR BADALNA HAI: Purane '# 4. Prediction Logic' ko hataiye aur ise paste kijiye
+# 4. Prediction Logic (With Same-Location Validation Fix)
 if submit_btn:
-    try:
-        # Text values ko unke respective label encoder se number me badlein
-        # DataFrame ke column names exact wahi hone chahiye jo model.fit() karte samay the!
-        input_data = pd.DataFrame([{
-            'Start_Location': label_encoders['Start_Location'].transform([start_loc])[0],
-            'End_Location': label_encoders['End_Location'].transform([end_loc])[0],
-            'Distance_KM': distance,
-            'Traffic_Level': label_encoders['Traffic_Level'].transform([traffic])[0],
-            'Weather': label_encoders['Weather'].transform([weather])[0], # Model training features ke hisab se check karein
-            'Time_of_Day': label_encoders['Time_of_Day'].transform([time_of_day])[0],
-            'Is_Metro_Construction_Zone': metro_val,
-            'Order_Type': label_encoders['Order_Type'].transform([order_type])[0],
-            'Vehicle_Type': label_encoders['Vehicle_Type'].transform([vehicle])[0]
-        }])
-        
-        # Model se prediction nikalna
-        predicted_time = model.predict(input_data)[0]
-        
-        # Result Display
+    if start_loc == end_loc:
+        # Agar start aur end location same hai toh model bypass karo aur warning box dikhao
         st.markdown(f"""
-            <div class="result-box">
+            <div class="result-box" style="border-left: 5px solid #EF4444; background-color: #1E293B;">
                 <h3 style="color: white; margin-bottom: 5px;">⏱️ Predicted Delivery Time</h3>
-                <h1 style="color: #10B981; font-size: 40px; margin: 10px 0;">{round(predicted_time, 1)} Minutes</h1>
-                <p style="color: #94A3B8; font-size: 13px;">Model Confidence (R²): 98.78% | Target: Actual_Time_Minutes</p>
+                <h1 style="color: #EF4444; font-size: 35px; margin: 10px 0;">0.0 Minutes</h1>
+                <p style="color: #94A3B8; font-size: 13px;">⚠️ Source and Destination are the same location.</p>
             </div>
         """, unsafe_allow_html=True)
-        
-    except Exception as prediction_error:
-        st.error(f"Prediction ke samay unexpected error aaya: {prediction_error}")
-        st.info("💡 Tip: Check karein ki aapke DataFrame ke column names aur Model ke expected training feature names exact same hain ya nahi.")
+    else:
+        try:
+            # Text values ko unke respective label encoder se number me badlein
+            input_data = pd.DataFrame([{
+                'Start_Location': label_encoders['Start_Location'].transform([start_loc])[0],
+                'End_Location': label_encoders['End_Location'].transform([end_loc])[0],
+                'Distance_KM': distance,
+                'Traffic_Level': label_encoders['Traffic_Level'].transform([traffic])[0],
+                'Weather': label_encoders['Weather'].transform([weather])[0],
+                'Time_of_Day': label_encoders['Time_of_Day'].transform([time_of_day])[0],
+                'Is_Metro_Construction_Zone': metro_val,
+                'Order_Type': label_encoders['Order_Type'].transform([order_type])[0],
+                'Vehicle_Type': label_encoders['Vehicle_Type'].transform([vehicle])[0]
+            }])
+            
+            # Model se prediction nikalna
+            predicted_time = model.predict(input_data)[0]
+            
+            # Result Display (Normal Green Box)
+            st.markdown(f"""
+                <div class="result-box">
+                    <h3 style="color: white; margin-bottom: 5px;">⏱️ Predicted Delivery Time</h3>
+                    <h1 style="color: #10B981; font-size: 40px; margin: 10px 0;">{round(predicted_time, 1)} Minutes</h1>
+                    <p style="color: #94A3B8; font-size: 13px;">Model Confidence (R²): 98.78% | Target: Actual_Time_Minutes</p>
+                </div>
+            """, unsafe_allow_html=True)
+            
+        except Exception as prediction_error:
+            st.error(f"Prediction ke samay unexpected error aaya: {prediction_error}")
